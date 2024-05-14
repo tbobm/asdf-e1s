@@ -9,7 +9,7 @@ TOOL_TEST="e1s --help"
 
 fail() {
 	echo -e "asdf-$TOOL_NAME: $*"
-	# exit 1
+	exit 1
 }
 
 curl_opts=(-fsSL)
