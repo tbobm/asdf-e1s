@@ -9,7 +9,7 @@ TOOL_TEST="e1s --help"
 
 fail() {
 	echo -e "asdf-$TOOL_NAME: $*"
-	exit 1
+	# exit 1
 }
 
 curl_opts=(-fsSL)
@@ -38,15 +38,22 @@ list_all_versions() {
 
 download_release() {
 	local version filename url
+	platform=$(get_platform)
+	arch=$(get_arch)
 	version="$1"
 	filename="$2"
 
 	# TODO: Adapt the release URL convention for e1s
-	url="$GH_REPO/archive/v${version}.tar.gz"
+	# https://github.com/keidarcy/e1s/releases/download/v1.0.34/e1s_1.0.34_linux_amd64.tar.gz
+	case "$platform" in
+	darwin) url="$GH_REPO/releases/download/v${version}/e1s_${version}_${platform}_all.tar.gz" ;;
+	*)
+		url="$GH_REPO/releases/download/v${version}/e1s_${version}_${platform}_${arch}.tar.gz"
+		;;
+	esac
 
 	echo "* Downloading $TOOL_NAME release $version..."
 	curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"
-	chmod +x "$filename"
 }
 
 install_version() {
@@ -69,7 +76,36 @@ install_version() {
 
 		echo "$TOOL_NAME $version installation was successful!"
 	) || (
-		rm -rf "$install_path"
+		# rm -rf "$install_path"
 		fail "An error occurred while installing $TOOL_NAME $version."
 	)
+}
+
+get_platform() {
+	local platform=""
+
+	case "$(uname | tr '[:upper:]' '[:lower:]')" in
+	darwin) platform="darwin" ;;
+	linux) platform="linux" ;;
+	windows) platform="windows" ;;
+	*)
+		fail "Platform '$(uname -m)' not supported!"
+		;;
+	esac
+
+	echo -n $platform
+}
+
+get_arch() {
+	local arch=""
+
+	case "$(uname -m)" in
+	x86_64 | amd64) arch="amd64" ;;
+	aarch64 | arm64) arch="arm64" ;;
+	*)
+		fail "Arch '$(uname -m)' not supported!"
+		;;
+	esac
+
+	echo -n $arch
 }
